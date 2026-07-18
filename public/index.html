@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>POS Terminal</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ============ LOGIN VIEW ============ -->
+<div id="view-login">
+  <div class="login-card">
+    <div class="login-logo" id="login-logo">11:11</div>
+    <h1 id="login-shop-name">Loading...</h1>
+    <div class="sub">POS TERMINAL</div>
+    <label>SECURITY PASSCODE</label>
+    <div class="pw-wrap">
+      <span class="pw-icon-left">🔒</span>
+      <input type="password" id="login-pw" placeholder="••••••••">
+      <button class="pw-toggle" type="button" onclick="togglePw()">👁</button>
+    </div>
+    <div class="err-text" id="login-err"></div>
+    <button class="btn-authenticate" onclick="doLogin()">AUTHENTICATE ›</button>
+    <div class="system-badge"><span class="dot"></span> SYSTEM ONLINE • ENCRYPTED</div>
+    <div class="login-version" id="login-version">MANAGEMENT TERMINAL</div>
+  </div>
+</div>
+
+<!-- ============ MOBILE TOP BAR ============ -->
+<div id="mobile-topbar">
+  <button id="hamburger-btn" onclick="openSidebar()">☰</button>
+  <div class="shop" id="mobile-shop-name">POS</div>
+  <div style="width:28px;"></div>
+</div>
+<div id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<!-- ============ APP SHELL ============ -->
+<div id="view-app" class="hidden">
+  <aside id="sidebar">
+    <div class="sidebar-head">
+      <div class="brand">
+        <div class="logo" id="sidebar-logo">11:11</div>
+        <div class="brand-text" id="sidebar-shop-name">Shop</div>
+      </div>
+      <button class="sidebar-close-btn" onclick="closeSidebar()">✕</button>
+    </div>
+    <ul class="nav-list" id="nav-list"></ul>
+    <div class="sidebar-logout">
+      <li class="nav-item" style="list-style:none;" onclick="logout()"><span class="ic">⏻</span><span class="label">Log Out</span></li>
+    </div>
+    <div class="sidebar-spacer"></div>
+    <div class="sidebar-footer">
+      <div class="avatar" id="role-avatar">U</div>
+      <div class="meta" id="sidebar-version">V2.1.0 • PREMIUM POS</div>
+    </div>
+  </aside>
+
+  <main id="main">
+    <div class="top-header">
+      <div class="shop-name" id="top-shop-name">Shop</div>
+      <div class="src-tag" id="top-src-tag">● OFFLINE (POS)</div>
+    </div>
+    <div id="page-billing"></div>
+    <div id="page-orders" class="hidden"></div>
+    <div id="page-analytics" class="hidden"></div>
+    <footer id="app-footer" class="app-footer"></footer>
+  </main>
+</div>
+
+<!-- ============ CATALOG PICKER MODAL (per row) ============ -->
+<div id="catalog-modal" class="modal-overlay hidden">
+  <div class="modal wide">
+    <div class="modal-head">
+      <h3>🔍 Catalogue</h3>
+      <button class="close" onclick="closeCatalog()">✕</button>
+    </div>
+    <input class="search-box" id="catalog-search" placeholder="Search product name or category..." oninput="renderCatalog()">
+    <div class="cat-tabs" id="cat-tabs"></div>
+    <div class="prod-grid" id="prod-grid"></div>
+
+    <div class="add-product-form">
+      <h3 style="font-size:13px; margin-bottom:10px;">➕ Add / Edit Catalogue Item</h3>
+      <input type="hidden" id="edit-id">
+      <div class="field-row3">
+        <div class="field"><label>NAME</label><input id="new-name" placeholder="Item name"></div>
+        <div class="field"><label>CATEGORY</label><input id="new-cat" placeholder="e.g. Shirts" list="cat-suggestions"><datalist id="cat-suggestions"></datalist></div>
+        <div class="field"><label>PRICE (₹)</label><input id="new-price" type="number" placeholder="0"></div>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <button class="btn primary" style="flex:1;" onclick="saveProduct()">💾 Save Item</button>
+        <button class="btn" style="flex:1;" onclick="resetProductForm()">Clear</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ INVOICE PREVIEW MODAL ============ -->
+<div id="invoice-modal" class="modal-overlay hidden">
+  <div class="modal wide">
+    <div class="modal-head">
+      <div>
+        <h3>Invoice</h3>
+        <div class="sub" id="inv-modal-sub"></div>
+      </div>
+      <div class="actions">
+        <button class="btn" onclick="window.print()">🖨</button>
+        <button class="btn primary" onclick="downloadInvoice()">⬇</button>
+        <button class="close" onclick="closeInvoiceModal()">✕</button>
+      </div>
+    </div>
+    <div id="print-area">
+      <div class="invoice-paper" id="invoice-paper"></div>
+    </div>
+    <div style="display:flex; gap:10px; margin-top:14px;">
+      <button class="btn" style="flex:1; background:#25d366; color:#fff; border-color:#25d366;" onclick="sendWhatsApp()">💬 Send via WhatsApp</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
