@@ -7,6 +7,7 @@ const authRoutes = require('./server/routes/auth');
 const configRoutes = require('./server/routes/config');
 const healthRoutes = require('./server/routes/health');
 const productRoutes = require('./server/routes/products');
+const categoryRoutes = require('./server/routes/categories');
 const orderRoutes = require('./server/routes/orders');
 const analyticsRoutes = require('./server/routes/analytics');
 const { requireAuth, requireAdmin } = require('./server/middleware/auth');
@@ -23,6 +24,7 @@ app.use('/api/health', healthRoutes);
 // Any signed-in role (staff or admin). orders.js applies its own
 // admin-only checks internally for the history/reporting endpoints.
 app.use('/api/products', requireAuth, productRoutes);
+app.use('/api/categories', requireAuth, categoryRoutes);
 app.use('/api/orders', requireAuth, orderRoutes);
 
 // Admin only.

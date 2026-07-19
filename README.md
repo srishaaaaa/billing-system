@@ -115,6 +115,41 @@ across serverless requests. Locally, `npm start` talks to the same
 database over the internet, so your laptop and your live site always see
 the same data.
 
+## Latest round of fixes
+
+- **Category creation is now real.** The Catalogue modal has an "Add
+  Category" box (name + Add button) — categories you create show up
+  immediately as filter tabs and in the product form's category dropdown.
+  Existing databases are backfilled automatically from whatever categories
+  were already on products, so nothing is lost.
+- **Removed the duplicate customer info** in the Billing Panel — the
+  Current Order summary no longer re-shows Customer/Phone next to the
+  Customer Details card; there's one place to see and edit it now.
+- **Removed a leftover header** that showed the shop name and an
+  "ONLINE ORDER" tag at the top of every page with no real function —
+  the sidebar and mobile top bar already show the shop name, so this was
+  pure clutter.
+- **Fixed the floating delete (bin) icon** in Order Items — it now stays
+  grouped with the quantity controls instead of dropping onto its own line.
+- **Order History and invoice actions are compact icon buttons** (💬 🧾 ⬇ 🗑)
+  that stay on one line regardless of screen width, and now include a
+  dedicated **Download** action per row (not just inside the invoice
+  preview).
+- **WhatsApp invoice message** now uses bold section headers and relevant
+  emojis, and mentions that a downloadable copy is available.
+- **Search boxes are pill-shaped** with a search icon, and the
+  Add/Edit Item form moved above the search box in the Catalogue modal.
+- **The Analytics date range picker** now sits on the right, next to the
+  period buttons, instead of on its own line below.
+- **Wider mobile breakpoint** (was 900px, now 1024px) so the sidebar
+  collapses into the drawer and Order History switches to cards sooner —
+  this also helps on phones where "Desktop site" mode is turned on in the
+  browser, which reports a wider viewport than the phone's actual screen.
+  **If your phone's browser still shows a table you have to scroll
+  sideways through, check the browser's menu for a "Desktop site" toggle
+  and turn it off** — that setting overrides how the page is allowed to
+  lay itself out, and no amount of responsive CSS on my end can undo it.
+
 ## What's different from the previous version
 
 - **Two separate logins.** One password field on the login screen; the
@@ -130,15 +165,18 @@ the same data.
   field (Rs. or %); whatever's typed in during a sale shows up under
   **Analytics Dashboard -> Coupons** as "Promo Campaign Performance" -- a
   report of discounts actually given, not something created from that page.
-- **Mobile-friendly.** Sidebar becomes a slide-in drawer under ~900px,
-  Order History switches from a table to stacked cards under ~700px, and
+- **Mobile-friendly.** Sidebar becomes a slide-in drawer under ~1024px,
+  Order History switches from a table to stacked cards under ~760px, and
   everything collapses gracefully down to a 360px-wide screen.
 - **Branding from environment variables**, not hardcoded in the code --
   shop name, owner, address, and footer all come from the environment
   variables above.
 - **"Powered by Cenexa Systems"** in the footer links to
   https://www.cenexasystems.com/ in a new tab.
-- **Postgres storage** (this update) -- required for Vercel; see above.
+- **Postgres storage** -- required for Vercel; see above.
+- **`/api/health`** -- visit this URL directly on your deployed site to
+  check whether the database is actually connected; it reports the real
+  reason if not, instead of a generic error.
 
 ## Project structure
 
@@ -155,7 +193,9 @@ pos-system/
 |   `-- routes/
 |       |-- auth.js          POST /api/auth/login (role-based)
 |       |-- config.js        GET  /api/config (public -- shop branding)
+|       |-- health.js        GET  /api/health (public -- diagnose DB connectivity)
 |       |-- products.js      /api/products (staff + admin)
+|       |-- categories.js    /api/categories (staff + admin -- catalogue categories)
 |       |-- orders.js        POST checkout (staff+admin); history/export (admin only)
 |       `-- analytics.js     /api/analytics/* (admin only)
 |-- public/                 Plain HTML/CSS/JS frontend -- served directly by

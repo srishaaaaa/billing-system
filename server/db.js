@@ -45,7 +45,17 @@ async function load() {
     await sql`INSERT INTO pos_store (key, value) VALUES ('main', ${JSON.stringify(seed)}::jsonb)`;
     return seed;
   }
-  return rows[0].value;
+
+  const data = rows[0].value;
+  // Older databases were seeded before "categories" existed as its own
+  // list — backfill it from whatever products already have, so existing
+  // deployments don't need a manual migration.
+  if (!Array.isArray(data.categories)) {
+    const names = [...new Set((data.products || []).map(p => p.category).filter(Boolean))];
+    data.categories = names.map((name, i) => ({ id: 'c-' + i + '-' + name.toLowerCase().replace(/\s+/g, '-'), name }));
+    await save(data);
+  }
+  return data;
 }
 
 async function save(data) {

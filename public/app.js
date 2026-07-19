@@ -8,6 +8,7 @@ const APP = {
   role: null,
   config: null,
   products: [],
+  categories: [],
   cart: [],
   activeCategory: 'ALL',
   currentSource: 'offline',
@@ -93,7 +94,6 @@ function applyBranding() {
   document.getElementById('sidebar-logo').textContent = initials;
   document.getElementById('sidebar-version').textContent = c.version;
 
-  document.getElementById('top-shop-name').textContent = c.shopName;
   document.getElementById('mobile-shop-name').textContent = c.shopName;
 
   document.title = c.shopName + ' — POS';
@@ -242,8 +242,6 @@ function renderBillingPage() {
         </div>
 
         <div class="mini-info"><span>SOURCE</span><b id="mini-source">OFFLINE</b></div>
-        <div class="mini-info"><span>CUSTOMER</span><b id="mini-customer">-</b></div>
-        <div class="mini-info"><span>PHONE</span><b id="mini-phone">-</b></div>
         <div class="empty-state hidden" id="mini-empty" style="padding:14px 0; font-style:italic;">No items added yet</div>
 
         <label class="field-label" style="display:block; font-size:11px; font-weight:700; color:#6a6455; margin:14px 0 6px;">MANUAL DISCOUNT</label>
@@ -293,10 +291,8 @@ function setSource(src) {
   document.getElementById('btn-offline').classList.toggle('active', src === 'offline');
   document.getElementById('btn-online').classList.toggle('active', src === 'online');
   const tag = document.getElementById('src-tag');
-  const topTag = document.getElementById('top-src-tag');
   const label = src === 'offline' ? '● OFFLINE (POS)' : '● ONLINE ORDER';
   tag.textContent = label; tag.classList.toggle('on', src === 'online');
-  if (topTag) { topTag.textContent = label; topTag.classList.toggle('on', src === 'online'); }
   document.getElementById('mini-source').textContent = src.toUpperCase();
 }
 
@@ -341,10 +337,12 @@ function renderCart() {
         <button class="catalog-btn" onclick="openCatalogForRow('${r.id}')">☰ CATALOGUE</button>
       </div>
       <input class="price-input" type="number" min="0" value="${r.price || ''}" placeholder="0" oninput="updateRowPrice('${r.id}', this.value)">
-      <div class="qty-ctrl">
-        <button onclick="changeQty('${r.id}',-1)">−</button><span>${r.qty}</span><button onclick="changeQty('${r.id}',1)">+</button>
+      <div class="qty-del-group">
+        <div class="qty-ctrl">
+          <button onclick="changeQty('${r.id}',-1)">−</button><span>${r.qty}</span><button onclick="changeQty('${r.id}',1)">+</button>
+        </div>
+        <button class="row-del" onclick="removeRow('${r.id}')">🗑</button>
       </div>
-      <button class="row-del" onclick="removeRow('${r.id}')">🗑</button>
     </div>
   `).join('');
 }
@@ -362,10 +360,6 @@ function validItems() {
 function renderSummary() {
   const custName = document.getElementById('cust-name');
   if (!custName) return;
-  const name = custName.value.trim();
-  const phone = document.getElementById('cust-phone').value.trim();
-  document.getElementById('mini-customer').textContent = name || '-';
-  document.getElementById('mini-phone').textContent = phone || '-';
 
   const items = validItems();
   document.getElementById('mini-empty').classList.toggle('hidden', items.length > 0);
@@ -479,9 +473,10 @@ function openCatalogToolbar() {
   openCatalogModal();
 }
 async function openCatalogModal() {
-  await loadProducts();
+  await Promise.all([loadProducts(), loadCategories()]);
   document.getElementById('catalog-modal').classList.remove('hidden');
-  populateCatSuggestions();
+  populateCategorySelect();
+  renderCategoryChips();
   APP.activeCategory = 'ALL';
   renderCatalog();
 }
@@ -489,13 +484,63 @@ function closeCatalog() {
   document.getElementById('catalog-modal').classList.add('hidden');
   APP.catalogContextRowId = null;
 }
-function populateCatSuggestions() {
-  const cats = [...new Set(APP.products.map(p => p.category))];
-  document.getElementById('cat-suggestions').innerHTML = cats.map(c => `<option value="${escapeHtml(c)}">`).join('');
+
+async function loadCategories() {
+  try {
+    APP.categories = await api('/categories');
+  } catch (e) { showError(e.message); }
+}
+
+function allCategoryNames() {
+  // Union of explicitly-created categories and any category text still
+  // sitting on older products, so nothing "disappears" after this update.
+  const fromList = APP.categories.map(c => c.name);
+  const fromProducts = APP.products.map(p => p.category);
+  return [...new Set([...fromList, ...fromProducts])].filter(Boolean);
+}
+
+function populateCategorySelect() {
+  const sel = document.getElementById('new-cat');
+  const names = allCategoryNames();
+  sel.innerHTML = names.length
+    ? names.map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('')
+    : '<option value="General">General</option>';
+}
+
+function renderCategoryChips() {
+  const el = document.getElementById('category-chip-list');
+  el.innerHTML = APP.categories.length
+    ? APP.categories.map(c => `<span class="category-chip">${escapeHtml(c.name)}<button title="Delete category" onclick="deleteCategory('${c.id}')">✕</button></span>`).join('')
+    : '<span style="font-size:11.5px; color:var(--muted);">No categories yet — add one above.</span>';
+}
+
+async function addCategory() {
+  const input = document.getElementById('new-category-name');
+  const name = input.value.trim();
+  if (!name) { showError('Enter a category name.'); return; }
+  try {
+    await api('/categories', { method: 'POST', body: JSON.stringify({ name }) });
+    input.value = '';
+    await loadCategories();
+    renderCategoryChips();
+    populateCategorySelect();
+    renderCatalog();
+    showToast('Category added');
+  } catch (e) { showError(e.message); }
+}
+async function deleteCategory(id) {
+  if (!confirm('Delete this category? Items already using it keep their category label.')) return;
+  try {
+    await api('/categories/' + id, { method: 'DELETE' });
+    await loadCategories();
+    renderCategoryChips();
+    populateCategorySelect();
+    renderCatalog();
+  } catch (e) { showError(e.message); }
 }
 
 function renderCatalog() {
-  const cats = ['ALL', ...new Set(APP.products.map(p => p.category))];
+  const cats = ['ALL', ...allCategoryNames()];
   document.getElementById('cat-tabs').innerHTML = cats.map(c =>
     `<button class="cat-tab ${c === APP.activeCategory ? 'active' : ''}" onclick="setCatalogCategory('${escapeHtml(c).replace(/'/g, "\\'")}')">${escapeHtml(c.toUpperCase())}</button>`
   ).join('');
@@ -534,7 +579,7 @@ function selectProductForCatalog(p) {
 
 async function saveProduct() {
   const name = document.getElementById('new-name').value.trim();
-  const category = document.getElementById('new-cat').value.trim() || 'General';
+  const category = document.getElementById('new-cat').value || 'General';
   const price = parseFloat(document.getElementById('new-price').value) || 0;
   if (!name || price <= 0) { showError('Enter a name and a valid price.'); return; }
 
@@ -556,6 +601,7 @@ function editProduct(id) {
   if (!p) return;
   document.getElementById('edit-id').value = p.id;
   document.getElementById('new-name').value = p.name;
+  populateCategorySelect();
   document.getElementById('new-cat').value = p.category;
   document.getElementById('new-price').value = p.price;
 }
@@ -570,7 +616,6 @@ async function deleteProduct(id) {
 function resetProductForm() {
   document.getElementById('edit-id').value = '';
   document.getElementById('new-name').value = '';
-  document.getElementById('new-cat').value = '';
   document.getElementById('new-price').value = '';
 }
 
@@ -587,6 +632,7 @@ function renderOrdersPage() {
           ${['all', 'today', 'week', 'month', 'year'].map(p => `<button data-period="${p}" class="${p === 'all' ? 'active' : ''}" onclick="setOrdersPeriod('${p}')">${{ all: 'All Time', today: 'Today', week: 'This Week', month: 'This Month', year: 'This Year' }[p]}</button>`).join('')}
         </div>
         <div class="date-range-inline">
+          <span class="calendar-icon">📅</span>
           <input type="date" id="oh-from" onchange="setOrdersCustomDate()">
           <input type="date" id="oh-to" onchange="setOrdersCustomDate()">
         </div>
@@ -698,9 +744,10 @@ function renderOrdersList(orders) {
       </td>
       <td>
         <div class="order-actions">
-          <button class="btn green" onclick="sendWhatsAppForOrder('${o.id}')">💬 WhatsApp</button>
-          <button class="btn primary" onclick="viewInvoice('${o.id}')">🧾 Invoice</button>
-          <button class="btn danger" onclick="deleteOrder('${o.id}')">🗑</button>
+          <button class="btn green" title="Send via WhatsApp" onclick="sendWhatsAppForOrder('${o.id}')">💬</button>
+          <button class="btn primary" title="View invoice" onclick="viewInvoice('${o.id}')">🧾</button>
+          <button class="btn dark" title="Download invoice" onclick="downloadInvoiceForOrder('${o.id}')">⬇</button>
+          <button class="btn danger" title="Delete" onclick="deleteOrder('${o.id}')">🗑</button>
         </div>
       </td>
     </tr>`).join('');
@@ -717,9 +764,10 @@ function renderOrdersList(orders) {
         <span style="font-size:11px; color:var(--muted);">${new Date(o.date).toLocaleDateString('en-GB')}</span>
       </div>
       <div class="actions">
-        <button class="btn green" onclick="sendWhatsAppForOrder('${o.id}')">💬 WhatsApp</button>
-        <button class="btn primary" onclick="viewInvoice('${o.id}')">🧾 Invoice</button>
-        <button class="btn danger" onclick="deleteOrder('${o.id}')">🗑</button>
+        <button class="btn green" title="Send via WhatsApp" onclick="sendWhatsAppForOrder('${o.id}')">💬</button>
+        <button class="btn primary" title="View invoice" onclick="viewInvoice('${o.id}')">🧾</button>
+        <button class="btn dark" title="Download invoice" onclick="downloadInvoiceForOrder('${o.id}')">⬇</button>
+        <button class="btn danger" title="Delete" onclick="deleteOrder('${o.id}')">🗑</button>
       </div>
     </div>
   `).join('');
@@ -836,13 +884,14 @@ function sendWhatsApp() {
 function sendWhatsAppForData(inv) {
   const shopName = (APP.config && APP.config.shopName) || 'our store';
   const lines = [
-    `Invoice No: ${inv.number}`,
-    `Date: ${new Date(inv.date).toLocaleDateString('en-GB')}`,
-    `Customer: ${inv.customer}`,
-    ``, `ITEMS PURCHASED`,
-    ...inv.items.map(it => `${it.name} — Qty: ${it.qty} x ₹${it.price} = ₹${(it.price * it.qty).toFixed(0)}`),
-    ``, `Grand Total: ₹${inv.grandTotal.toFixed(2)}`,
-    ``, `Thank you for choosing ${shopName}!`
+    `🧾 *Invoice No:* ${inv.number}`,
+    `📅 *Date:* ${new Date(inv.date).toLocaleDateString('en-GB')}`,
+    `🙋 *Customer:* ${inv.customer}`,
+    ``, `🛍️ *ITEMS PURCHASED*`,
+    ...inv.items.map(it => `• ${it.name} — Qty: ${it.qty} x ₹${it.price} = ₹${(it.price * it.qty).toFixed(0)}`),
+    ``, `💰 *Grand Total: ₹${inv.grandTotal.toFixed(2)}*`,
+    ``, `📎 A downloadable copy of your invoice is available on request!`,
+    ``, `✨ Thank you for choosing *${shopName}*! 🙏`
   ];
   const text = encodeURIComponent(lines.join('\n'));
   const phone = (inv.phone || '').replace(/\D/g, '');
@@ -852,7 +901,15 @@ function sendWhatsAppForData(inv) {
 
 function downloadInvoice() {
   if (!APP.currentInvoiceOrder) return;
-  const inv = APP.currentInvoiceOrder;
+  downloadInvoiceForData(APP.currentInvoiceOrder);
+}
+async function downloadInvoiceForOrder(id) {
+  try {
+    const order = await api('/orders/' + id);
+    downloadInvoiceForData(order);
+  } catch (e) { showError(e.message); }
+}
+function downloadInvoiceForData(inv) {
   const css = `
     body{font-family:Segoe UI,Arial,sans-serif; color:#1a1a1a; max-width:620px; margin:30px auto; padding:0 20px;}
     .inv-center{text-align:center; margin-bottom:22px;}
@@ -898,12 +955,15 @@ function renderAnalyticsPage() {
         <button data-tab="products" onclick="setAnalyticsTab('products')">Products</button>
         <button data-tab="coupons" onclick="setAnalyticsTab('coupons')">Coupons</button>
       </div>
-      <div class="period-row" id="an-period-row">
-        ${['all', 'today', 'week', 'month', 'year'].map(p => `<button data-period="${p}" class="${p === 'all' ? 'active' : ''}" onclick="setAnalyticsPeriod('${p}')">${{ all: 'All Time', today: 'Today', week: 'This Week', month: 'This Month', year: 'This Year' }[p]}</button>`).join('')}
+      <div class="period-and-date">
+        <div class="period-row" id="an-period-row">
+          ${['all', 'today', 'week', 'month', 'year'].map(p => `<button data-period="${p}" class="${p === 'all' ? 'active' : ''}" onclick="setAnalyticsPeriod('${p}')">${{ all: 'All Time', today: 'Today', week: 'This Week', month: 'This Month', year: 'This Year' }[p]}</button>`).join('')}
+        </div>
+        <div class="date-range-inline">
+          <span class="calendar-icon">📅</span>
+          <input type="date" id="an-from" onchange="setAnalyticsCustomDate()"> <span style="color:var(--muted); font-size:12px;">to</span> <input type="date" id="an-to" onchange="setAnalyticsCustomDate()">
+        </div>
       </div>
-    </div>
-    <div class="date-range-inline" style="margin-bottom:16px;">
-      <input type="date" id="an-from" onchange="setAnalyticsCustomDate()"> <span style="color:var(--muted); font-size:12px;">to</span> <input type="date" id="an-to" onchange="setAnalyticsCustomDate()">
     </div>
     <div id="analytics-body"><div class="empty-state">Loading analytics...</div></div>
   `;
@@ -995,7 +1055,7 @@ async function loadAnalyticsTab() {
         <div class="chart-row">
           <div class="card">
             <h3>Today's Transactions</h3>
-            <input class="search-box" id="today-search" placeholder="Search invoice/phone..." oninput="filterTodayTransactions()">
+            <div class="search-icon-wrap"><span class="search-icon">🔍</span><input class="search-box" id="today-search" placeholder="Search invoice/phone..." oninput="filterTodayTransactions()"></div>
             <div style="overflow-x:auto;">
               <table id="today-table">
                 <thead><tr><th>Invoice ID</th><th>Customer No</th><th>Source</th><th>Items</th><th>Grand Total</th></tr></thead>
@@ -1025,7 +1085,7 @@ async function loadAnalyticsTab() {
       body.innerHTML = `
         <div class="card">
           <div class="modal-head" style="margin-bottom:10px;"><h3 style="color:var(--ink);">Product Sales Leaderboard</h3></div>
-          <input class="search-box" id="product-search" placeholder="Search product..." oninput="filterProductLeaderboard()">
+          <div class="search-icon-wrap"><span class="search-icon">🔍</span><input class="search-box" id="product-search" placeholder="Search product..." oninput="filterProductLeaderboard()"></div>
           <div class="leaderboard-row head">
             <span>#</span><span>Product</span><span>Qty</span><span>Revenue</span><span class="share-cell">Market Share</span>
           </div>
@@ -1046,7 +1106,7 @@ async function loadAnalyticsTab() {
           </div>
           <div class="card">
             <h3>Promo Campaign Performance</h3>
-            <input class="search-box" id="promo-search" placeholder="Search invoice/mobile/amount..." oninput="filterPromoTable()">
+            <div class="search-icon-wrap"><span class="search-icon">🔍</span><input class="search-box" id="promo-search" placeholder="Search invoice/mobile/amount..." oninput="filterPromoTable()"></div>
             <div style="overflow-x:auto;">
               <table>
                 <thead><tr><th>Order ID</th><th>Customer Mobile</th><th>Order Total</th><th>Discount Applied</th></tr></thead>

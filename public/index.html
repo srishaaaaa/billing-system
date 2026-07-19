@@ -57,10 +57,6 @@
   </aside>
 
   <main id="main">
-    <div class="top-header">
-      <div class="shop-name" id="top-shop-name">Shop</div>
-      <div class="src-tag" id="top-src-tag">● OFFLINE (POS)</div>
-    </div>
     <div id="page-billing"></div>
     <div id="page-orders" class="hidden"></div>
     <div id="page-analytics" class="hidden"></div>
@@ -75,23 +71,36 @@
       <h3>🔍 Catalogue</h3>
       <button class="close" onclick="closeCatalog()">✕</button>
     </div>
-    <input class="search-box" id="catalog-search" placeholder="Search product name or category..." oninput="renderCatalog()">
-    <div class="cat-tabs" id="cat-tabs"></div>
-    <div class="prod-grid" id="prod-grid"></div>
 
-    <div class="add-product-form">
-      <h3 style="font-size:13px; margin-bottom:10px;">➕ Add / Edit Catalogue Item</h3>
+    <div class="compact-form-box">
+      <div class="compact-form-title">➕ Add / Edit Item</div>
       <input type="hidden" id="edit-id">
       <div class="field-row3">
         <div class="field"><label>NAME</label><input id="new-name" placeholder="Item name"></div>
-        <div class="field"><label>CATEGORY</label><input id="new-cat" placeholder="e.g. Shirts" list="cat-suggestions"><datalist id="cat-suggestions"></datalist></div>
+        <div class="field"><label>CATEGORY</label><select id="new-cat"></select></div>
         <div class="field"><label>PRICE (₹)</label><input id="new-price" type="number" placeholder="0"></div>
       </div>
-      <div style="display:flex; gap:10px;">
+      <div style="display:flex; gap:8px;">
         <button class="btn primary" style="flex:1;" onclick="saveProduct()">💾 Save Item</button>
         <button class="btn" style="flex:1;" onclick="resetProductForm()">Clear</button>
       </div>
     </div>
+
+    <div class="compact-form-box">
+      <div class="compact-form-title">🏷 Add Category</div>
+      <div style="display:flex; gap:8px;">
+        <input id="new-category-name" placeholder="e.g. Sportswear" style="flex:1; padding:9px 12px; border:1.5px solid var(--line); border-radius:8px;">
+        <button class="btn primary" onclick="addCategory()">+ Add</button>
+      </div>
+      <div class="category-chip-list" id="category-chip-list"></div>
+    </div>
+
+    <div class="search-icon-wrap">
+      <span class="search-icon">🔍</span>
+      <input class="search-box" id="catalog-search" placeholder="Search product name or category..." oninput="renderCatalog()">
+    </div>
+    <div class="cat-tabs" id="cat-tabs"></div>
+    <div class="prod-grid" id="prod-grid"></div>
   </div>
 </div>
 
@@ -112,8 +121,9 @@
     <div id="print-area">
       <div class="invoice-paper" id="invoice-paper"></div>
     </div>
-    <div style="display:flex; gap:10px; margin-top:14px;">
-      <button class="btn" style="flex:1; background:#25d366; color:#fff; border-color:#25d366;" onclick="sendWhatsApp()">💬 Send via WhatsApp</button>
+    <div style="display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;">
+      <button class="btn" style="flex:1; min-width:140px; background:#25d366; color:#fff; border-color:#25d366;" onclick="sendWhatsApp()">💬 Send via WhatsApp</button>
+      <button class="btn primary" style="flex:1; min-width:140px;" onclick="downloadInvoice()">⬇ Download Invoice</button>
     </div>
   </div>
 </div>

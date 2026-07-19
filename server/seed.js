@@ -17,6 +17,11 @@ function buildSeed() {
     return new Date(now.getTime() - h * 60 * 60 * 1000).toISOString();
   }
 
+  const categories = [
+    { id: 'c-shirts', name: 'Shirts' },
+    { id: 'c-pants', name: 'Pants' }
+  ];
+
   const products = [
     { id: 'p1', name: 'Shirt', tamil: '', category: 'Shirts', price: 799, active: true },
     { id: 'p2', name: 'Linen Shirts', tamil: '', category: 'Shirts', price: 1299, active: true },
@@ -88,7 +93,7 @@ function buildSeed() {
       items: [{ name: 'Printed Shirt', price: 899, qty: 2 }] })
   ];
 
-  return { products, orders };
+  return { categories, products, orders };
 }
 
 module.exports = buildSeed;
