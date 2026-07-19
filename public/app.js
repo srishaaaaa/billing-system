@@ -276,7 +276,7 @@ function renderBillingPage() {
     </div>
   `;
 
-  APP.cart = [blankRow()];
+  APP.cart = [];
   loadProducts().then(() => { renderCart(); renderSummary(); });
 }
 
@@ -297,7 +297,7 @@ function setSource(src) {
 }
 
 function clearOrder() {
-  APP.cart = [blankRow()];
+  APP.cart = [];
   renderCart(); renderSummary();
   showToast('Order cleared');
 }
@@ -307,7 +307,6 @@ function addBlankRow() {
 }
 function removeRow(id) {
   APP.cart = APP.cart.filter(r => r.id !== id);
-  if (APP.cart.length === 0) APP.cart.push(blankRow());
   renderCart(); renderSummary();
 }
 function updateRowName(id, val) {
@@ -330,6 +329,10 @@ function changeQty(id, delta) {
 function renderCart() {
   const container = document.getElementById('cart-rows');
   if (!container) return;
+  if (APP.cart.length === 0) {
+    container.innerHTML = `<div class="empty-state" style="padding:18px 0; font-style:italic;">No items added yet — use Add to Catalogue or Add Custom Item above.</div>`;
+    return;
+  }
   container.innerHTML = APP.cart.map(r => `
     <div class="item-row">
       <div class="name-wrap">
@@ -446,7 +449,7 @@ async function completeSale() {
 }
 
 function resetBillingForm() {
-  APP.cart = [blankRow()];
+  APP.cart = [];
   if (document.getElementById('cust-name')) {
     document.getElementById('cust-name').value = '';
     document.getElementById('cust-phone').value = '';
@@ -633,8 +636,7 @@ function renderOrdersPage() {
         </div>
         <div class="date-range-inline">
           <span class="calendar-icon">📅</span>
-          <input type="date" id="oh-from" onchange="setOrdersCustomDate()">
-          <input type="date" id="oh-to" onchange="setOrdersCustomDate()">
+          <input type="date" id="oh-from" onchange="setOrdersCustomDate()"> <span style="color:var(--muted); font-size:12px;">to</span> <input type="date" id="oh-to" onchange="setOrdersCustomDate()">
         </div>
         <button class="btn primary" onclick="exportCSV()">⬇ EXPORT CSV</button>
       </div>
@@ -656,12 +658,11 @@ function renderOrdersPage() {
     <div class="results-count" id="results-count">Loading...</div>
 
     <div style="overflow-x:auto;">
-      <table class="responsive-hide">
+      <table>
         <thead><tr><th>Order ID</th><th>Customer Name</th><th>Mobile Number</th><th>Source</th><th>Total Due</th><th>Status</th><th>Actions</th></tr></thead>
         <tbody id="orders-body"></tbody>
       </table>
     </div>
-    <div class="order-cards" id="orders-cards"></div>
     <div id="orders-empty" class="empty-state hidden"><div class="ic">🧾</div>No bills match these filters</div>
   `;
   APP.orderFilters = { source: 'all', from: '', to: '', orderId: '', customer: '', phone: '' };
@@ -718,7 +719,6 @@ async function loadOrders() {
 
 function renderOrdersList(orders) {
   const body = document.getElementById('orders-body');
-  const cardsWrap = document.getElementById('orders-cards');
   const empty = document.getElementById('orders-empty');
   const countEl = document.getElementById('results-count');
   if (!body) return;
@@ -726,7 +726,7 @@ function renderOrdersList(orders) {
   countEl.textContent = `${orders.length} result${orders.length === 1 ? '' : 's'}`;
 
   if (orders.length === 0) {
-    body.innerHTML = ''; cardsWrap.innerHTML = ''; empty.classList.remove('hidden'); return;
+    body.innerHTML = ''; empty.classList.remove('hidden'); return;
   }
   empty.classList.add('hidden');
 
@@ -751,26 +751,6 @@ function renderOrdersList(orders) {
         </div>
       </td>
     </tr>`).join('');
-
-  cardsWrap.innerHTML = orders.map(o => `
-    <div class="order-card">
-      <div class="row1">
-        <div><div class="oid">${escapeHtml(o.number)}</div><div class="cust">${escapeHtml(o.customer)} · ${escapeHtml(o.phone)}</div></div>
-        <div class="total">${money(o.grandTotal)}</div>
-      </div>
-      <div class="meta-row">
-        <span class="tag ${o.source}">${escapeHtml(o.source)}</span>
-        <span class="status-badge completed">${escapeHtml(o.status)}</span>
-        <span style="font-size:11px; color:var(--muted);">${new Date(o.date).toLocaleDateString('en-GB')}</span>
-      </div>
-      <div class="actions">
-        <button class="btn green" title="Send via WhatsApp" onclick="sendWhatsAppForOrder('${o.id}')">💬</button>
-        <button class="btn primary" title="View invoice" onclick="viewInvoice('${o.id}')">🧾</button>
-        <button class="btn dark" title="Download invoice" onclick="downloadInvoiceForOrder('${o.id}')">⬇</button>
-        <button class="btn danger" title="Delete" onclick="deleteOrder('${o.id}')">🗑</button>
-      </div>
-    </div>
-  `).join('');
 }
 
 async function updateOrderStatus(id, status) {
@@ -883,6 +863,7 @@ function sendWhatsApp() {
 }
 function sendWhatsAppForData(inv) {
   const shopName = (APP.config && APP.config.shopName) || 'our store';
+  const invoiceLink = `${window.location.origin}/api/invoice/${inv.id}`;
   const lines = [
     `🧾 *Invoice No:* ${inv.number}`,
     `📅 *Date:* ${new Date(inv.date).toLocaleDateString('en-GB')}`,
@@ -890,7 +871,7 @@ function sendWhatsAppForData(inv) {
     ``, `🛍️ *ITEMS PURCHASED*`,
     ...inv.items.map(it => `• ${it.name} — Qty: ${it.qty} x ₹${it.price} = ₹${(it.price * it.qty).toFixed(0)}`),
     ``, `💰 *Grand Total: ₹${inv.grandTotal.toFixed(2)}*`,
-    ``, `📎 A downloadable copy of your invoice is available on request!`,
+    ``, `📎 Download your invoice: ${invoiceLink}`,
     ``, `✨ Thank you for choosing *${shopName}*! 🙏`
   ];
   const text = encodeURIComponent(lines.join('\n'));

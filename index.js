@@ -10,6 +10,7 @@ const productRoutes = require('./server/routes/products');
 const categoryRoutes = require('./server/routes/categories');
 const orderRoutes = require('./server/routes/orders');
 const analyticsRoutes = require('./server/routes/analytics');
+const invoiceRoutes = require('./server/routes/invoice');
 const { requireAuth, requireAdmin } = require('./server/middleware/auth');
 
 const app = express();
@@ -20,6 +21,9 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/config', configRoutes);
 app.use('/api/health', healthRoutes);
+// Public — customer-facing invoice link shared over WhatsApp; the order's
+// own UUID is the access token, so no login is required to view/download it.
+app.use('/api/invoice', invoiceRoutes);
 
 // Any signed-in role (staff or admin). orders.js applies its own
 // admin-only checks internally for the history/reporting endpoints.
