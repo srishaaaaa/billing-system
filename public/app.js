@@ -655,8 +655,8 @@ function renderOrdersPage() {
 
     <div class="results-count" id="results-count">Loading...</div>
 
-    <div class="responsive-hide" style="overflow-x:auto;">
-      <table>
+    <div style="overflow-x:auto;">
+      <table class="responsive-hide">
         <thead><tr><th>Order ID</th><th>Customer Name</th><th>Mobile Number</th><th>Source</th><th>Total Due</th><th>Status</th><th>Actions</th></tr></thead>
         <tbody id="orders-body"></tbody>
       </table>
@@ -1097,11 +1097,11 @@ async function loadAnalyticsTab() {
     } else if (tab === 'coupons') {
       const d = await api('/analytics/discounts?' + params.toString());
       body.innerHTML = `
-        <div class="chart-row" style="grid-template-columns:1fr 1.4fr;">
+        <div class="chart-row coupons-grid">
           <div class="card">
             <h3>Discount Summary</h3>
-            <div class="stat-card" style="margin-bottom:10px;"><div class="ic">%</div><div class="label">Total Discounts Given</div><div class="value">${money(d.totalDiscountsGiven)}</div></div>
-            <div class="stat-card" style="margin-bottom:10px;"><div class="ic">🧾</div><div class="label">Discounted Orders</div><div class="value">${d.discountedOrders}</div></div>
+            <div class="stat-card" style="margin-bottom:12px;"><div class="ic">%</div><div class="label">Total Discounts Given</div><div class="value">${money(d.totalDiscountsGiven)}</div></div>
+            <div class="stat-card" style="margin-bottom:12px;"><div class="ic">🧾</div><div class="label">Discounted Orders</div><div class="value">${d.discountedOrders}</div></div>
             <div class="stat-card"><div class="ic">₹</div><div class="label">Avg Discount / Order</div><div class="value">${money(d.avgDiscountPerOrder)}</div></div>
           </div>
           <div class="card">

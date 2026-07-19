@@ -296,13 +296,14 @@ input:checked + .slider:before{transform:translateX(17px);}
 .stat-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:16px;}
 .stat-grid.cols-5{grid-template-columns:repeat(5,1fr);}
 .stat-grid.cols-3{grid-template-columns:repeat(3,1fr);}
-.stat-card{border-radius:12px; padding:14px 16px; border:1px solid var(--line); background:#fff; position:relative; min-width:0;}
+.stat-card{border-radius:12px; padding:14px 46px 14px 16px; border:1px solid var(--line); background:#fff; position:relative; min-width:0;}
 .stat-card .label{font-size:10px; letter-spacing:.04em; text-transform:uppercase; font-weight:700; color:var(--muted); overflow-wrap:anywhere;}
 .stat-card .value{font-size:21px; font-weight:800; margin-top:6px; color:var(--ink); overflow-wrap:anywhere;}
 .stat-card .sub{font-size:10.5px; color:var(--muted); margin-top:4px;}
-.stat-card .ic{position:absolute; top:12px; right:14px; font-size:13px; color:var(--red); opacity:.8;}
+.stat-card .ic{position:absolute; top:10px; right:10px; width:34px; height:34px; display:flex; align-items:center; justify-content:center; font-size:16px; border-radius:9px; background:rgba(190,30,45,.08); color:var(--red); opacity:1;}
 
 .chart-row{display:grid; grid-template-columns:1.4fr 1fr; gap:16px;}
+.coupons-grid{grid-template-columns:1.15fr 1.35fr;}
 .bar-chart{display:flex; align-items:flex-end; gap:10px; height:170px; padding:10px 4px 0; overflow-x:auto;}
 .bar-col{flex:1; min-width:26px; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%;}
 .bar-col .bar{width:100%; max-width:38px; border-radius:5px 5px 0 0; background:linear-gradient(180deg,var(--red),var(--red-dark)); transition:height .3s;}
@@ -332,7 +333,7 @@ input:checked + .slider:before{transform:translateX(17px);}
 
 @media (max-width:1100px){
   .stat-grid, .stat-grid.cols-5, .stat-grid.cols-3{grid-template-columns:repeat(2,1fr);}
-  .chart-row{grid-template-columns:1fr;}
+  .chart-row, .coupons-grid{grid-template-columns:1fr;}
 }
 
 @media (max-width:1024px){
