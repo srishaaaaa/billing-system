@@ -114,7 +114,9 @@ function renderFooter() {
 /* ---------------- LOGIN / SESSION ---------------- */
 function togglePw() {
   const inp = document.getElementById('login-pw');
+  const btn = document.querySelector('.pw-toggle');
   inp.type = inp.type === 'password' ? 'text' : 'password';
+  if (btn) btn.textContent = inp.type === 'password' ? '👁' : '🙈';
 }
 
 async function doLogin() {
@@ -943,6 +945,7 @@ function renderAnalyticsPage() {
         <div class="date-range-inline">
           <span class="calendar-icon">📅</span>
           <input type="date" id="an-from" onchange="setAnalyticsCustomDate()"> <span style="color:var(--muted); font-size:12px;">to</span> <input type="date" id="an-to" onchange="setAnalyticsCustomDate()">
+          <span class="date-format-hint">DD/MM/YY</span>
         </div>
       </div>
     </div>

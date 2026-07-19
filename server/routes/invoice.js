@@ -10,7 +10,10 @@ function escapeHtml(str) {
 function moneyFull(v) { return '₹' + Number(v || 0).toFixed(2); }
 
 function shopInitials(name) {
-  return (name || '').split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+  if (!name) return 'POS';
+  const first = name.trim().split(' ')[0];
+  if (/\d/.test(first)) return first;
+  return name.trim().split(' ').map(w => w[0]).slice(0, 3).join('').toUpperCase();
 }
 
 function renderInvoicePage(inv, config) {
