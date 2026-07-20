@@ -162,12 +162,23 @@ function logout() {
 }
 
 function openSidebar() {
+  document.getElementById('sidebar').classList.remove('sidebar-collapsed');
   document.getElementById('sidebar').classList.add('open');
   document.getElementById('sidebar-overlay').classList.add('open');
 }
 function closeSidebar() {
   document.getElementById('sidebar').classList.remove('open');
   document.getElementById('sidebar-overlay').classList.remove('open');
+}
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const isMobile = window.matchMedia('(max-width:1024px)').matches;
+  if (isMobile) {
+    if (sidebar.classList.contains('open')) closeSidebar();
+    else openSidebar();
+  } else {
+    sidebar.classList.toggle('sidebar-collapsed');
+  }
 }
 
 /* ---------------- NAV / ROUTING ---------------- */
@@ -207,7 +218,7 @@ function renderBillingPage() {
   el.innerHTML = `
     <div class="page-header">
       <div class="page-title-block">
-        <button class="page-hamburger-btn" onclick="openSidebar()" title="Menu">☰</button>
+        <button class="page-hamburger-btn" onclick="toggleSidebar()" title="Menu">☰</button>
         <div class="bar"></div>
         <div><h1>POS Billing Panel</h1><p>Quick invoice generator &amp; database synced checkout</p></div>
       </div>
@@ -222,8 +233,8 @@ function renderBillingPage() {
         <div class="card">
           <h3><span class="sq"></span> Customer Details</h3>
           <div class="field-row">
-            <div class="field"><label>CUSTOMER NAME</label><input id="cust-name" placeholder="Enter name" oninput="renderSummary()"></div>
-            <div class="field"><label>MOBILE NUMBER (WHATSAPP)</label><input id="cust-phone" placeholder="Enter 10-digit number" maxlength="10" oninput="renderSummary()"></div>
+            <div class="field"><label>CUSTOMER NAME <span class="required-star">*</span></label><input id="cust-name" placeholder="Enter name" oninput="renderSummary()"></div>
+            <div class="field"><label>MOBILE NUMBER (WHATSAPP) <span class="required-star">*</span></label><input id="cust-phone" placeholder="Enter 10-digit number" maxlength="10" oninput="renderSummary()"></div>
           </div>
         </div>
 
@@ -377,6 +388,9 @@ function renderSummary() {
   const custPhoneVal = document.getElementById('cust-phone').value.trim();
   document.getElementById('mini-customer').textContent = custNameVal || 'Walk-in Customer';
   document.getElementById('mini-phone').textContent = custPhoneVal || '—';
+  const nameValid = custNameVal.length > 0;
+  const phoneValid = /^\d{10}$/.test(custPhoneVal);
+  document.getElementById('cust-phone').classList.toggle('field-invalid', custPhoneVal.length > 0 && !phoneValid);
 
   const linesEl = document.getElementById('invoice-lines');
   linesEl.innerHTML = items.length ? items.map(r => `
@@ -430,13 +444,17 @@ function renderSummary() {
     document.getElementById('return-line').style.display = 'none';
   }
 
-  document.getElementById('complete-btn').disabled = items.length === 0;
+  document.getElementById('complete-btn').disabled = items.length === 0 || !nameValid || !phoneValid;
   return { subtotal, discountAmt, gstAmt, delivery, grand, itemCount, received };
 }
 
 async function completeSale() {
   const items = validItems();
   if (items.length === 0) return;
+  const custName = document.getElementById('cust-name').value.trim();
+  const custPhone = document.getElementById('cust-phone').value.trim();
+  if (!custName) { showError('Customer name is required.'); return; }
+  if (!/^\d{10}$/.test(custPhone)) { showError('Enter a valid 10-digit mobile number.'); return; }
   const btn = document.getElementById('complete-btn');
   btn.disabled = true;
   btn.textContent = 'Processing...';
@@ -648,7 +666,7 @@ function renderOrdersPage() {
   const el = document.getElementById('page-orders');
   el.innerHTML = `
     <div class="filter-header-row">
-      <div class="page-title-block"><button class="page-hamburger-btn" onclick="openSidebar()" title="Menu">☰</button><div class="bar"></div><div><h1>Order History</h1><p>Manage and track past invoices</p></div></div>
+      <div class="page-title-block"><button class="page-hamburger-btn" onclick="toggleSidebar()" title="Menu">☰</button><div class="bar"></div><div><h1>Order History</h1><p>Manage and track past invoices</p></div></div>
       <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
         <div class="period-row" id="oh-period-row">
           ${['all', 'today', 'week', 'month', 'year'].map(p => `<button data-period="${p}" class="${p === 'all' ? 'active' : ''}" onclick="setOrdersPeriod('${p}')">${{ all: 'All Time', today: 'Today', week: 'This Week', month: 'This Month', year: 'This Year' }[p]}</button>`).join('')}
@@ -947,7 +965,7 @@ function renderAnalyticsPage() {
   const el = document.getElementById('page-analytics');
   el.innerHTML = `
     <div class="page-header">
-      <div class="page-title-block"><button class="page-hamburger-btn" onclick="openSidebar()" title="Menu">☰</button><div class="bar"></div><div><h1>POS Analytics</h1><p>Real-time store &amp; channel insights</p></div></div>
+      <div class="page-title-block"><button class="page-hamburger-btn" onclick="toggleSidebar()" title="Menu">☰</button><div class="bar"></div><div><h1>POS Analytics</h1><p>Real-time store &amp; channel insights</p></div></div>
     </div>
     <div class="tabs-row">
       <div class="subtabs">

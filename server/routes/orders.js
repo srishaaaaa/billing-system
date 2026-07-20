@@ -107,6 +107,12 @@ router.post('/', asyncHandler(async (req, res) => {
   if (!Array.isArray(items) || items.length === 0) {
     return res.status(400).json({ error: 'Order must include at least one item.' });
   }
+  if (!customer || !customer.trim()) {
+    return res.status(400).json({ error: 'Customer name is required.' });
+  }
+  if (!phone || !/^\d{10}$/.test(String(phone).trim())) {
+    return res.status(400).json({ error: 'A valid 10-digit mobile number is required.' });
+  }
   for (const it of items) {
     if (!it.name || isNaN(Number(it.price)) || isNaN(Number(it.qty)) || Number(it.qty) <= 0 || Number(it.price) <= 0) {
       return res.status(400).json({ error: 'Each item needs a name, a price above zero, and a quantity.' });
