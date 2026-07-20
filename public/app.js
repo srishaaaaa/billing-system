@@ -207,6 +207,7 @@ function renderBillingPage() {
   el.innerHTML = `
     <div class="page-header">
       <div class="page-title-block">
+        <button class="page-hamburger-btn" onclick="openSidebar()" title="Menu">☰</button>
         <div class="bar"></div>
         <div><h1>POS Billing Panel</h1><p>Quick invoice generator &amp; database synced checkout</p></div>
       </div>
@@ -244,7 +245,10 @@ function renderBillingPage() {
         </div>
 
         <div class="mini-info"><span>SOURCE</span><b id="mini-source">OFFLINE</b></div>
+        <div class="mini-info"><span>CUSTOMER</span><b id="mini-customer">Walk-in Customer</b></div>
+        <div class="mini-info"><span>PHONE</span><b id="mini-phone">—</b></div>
         <div class="empty-state hidden" id="mini-empty" style="padding:14px 0; font-style:italic;">No items added yet</div>
+        <div id="invoice-lines" class="invoice-lines"></div>
 
         <label class="field-label" style="display:block; font-size:11px; font-weight:700; color:#6a6455; margin:14px 0 6px;">MANUAL DISCOUNT</label>
         <div class="discount-row" style="margin-bottom:14px;">
@@ -368,6 +372,19 @@ function renderSummary() {
 
   const items = validItems();
   document.getElementById('mini-empty').classList.toggle('hidden', items.length > 0);
+
+  const custNameVal = document.getElementById('cust-name').value.trim();
+  const custPhoneVal = document.getElementById('cust-phone').value.trim();
+  document.getElementById('mini-customer').textContent = custNameVal || 'Walk-in Customer';
+  document.getElementById('mini-phone').textContent = custPhoneVal || '—';
+
+  const linesEl = document.getElementById('invoice-lines');
+  linesEl.innerHTML = items.length ? items.map(r => `
+    <div class="invoice-line-row">
+      <span class="inv-line-name">${escapeHtml(r.name)} <span class="inv-line-qty">x${r.qty}</span></span>
+      <span class="inv-line-amt">${money(Number(r.price) * Number(r.qty))}</span>
+    </div>
+  `).join('') : '';
 
   const subtotal = items.reduce((s, r) => s + Number(r.price) * Number(r.qty), 0);
   const itemCount = items.reduce((s, r) => s + Number(r.qty), 0);
@@ -534,7 +551,7 @@ async function addCategory() {
   } catch (e) { showError(e.message); }
 }
 async function deleteCategory(id) {
-  if (!confirm('Delete this category? Items already using it keep their category label.')) return;
+  if (!confirm('Are you sure you want to delete this?')) return;
   try {
     await api('/categories/' + id, { method: 'DELETE' });
     await loadCategories();
@@ -611,7 +628,7 @@ function editProduct(id) {
   document.getElementById('new-price').value = p.price;
 }
 async function deleteProduct(id) {
-  if (!confirm('Remove this item from the catalogue?')) return;
+  if (!confirm('Are you sure you want to delete this?')) return;
   try {
     await api('/products/' + id, { method: 'DELETE' });
     await loadProducts();
@@ -631,7 +648,7 @@ function renderOrdersPage() {
   const el = document.getElementById('page-orders');
   el.innerHTML = `
     <div class="filter-header-row">
-      <div class="page-title-block"><div class="bar"></div><div><h1>Order History</h1><p>Manage and track past invoices</p></div></div>
+      <div class="page-title-block"><button class="page-hamburger-btn" onclick="openSidebar()" title="Menu">☰</button><div class="bar"></div><div><h1>Order History</h1><p>Manage and track past invoices</p></div></div>
       <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
         <div class="period-row" id="oh-period-row">
           ${['all', 'today', 'week', 'month', 'year'].map(p => `<button data-period="${p}" class="${p === 'all' ? 'active' : ''}" onclick="setOrdersPeriod('${p}')">${{ all: 'All Time', today: 'Today', week: 'This Week', month: 'This Month', year: 'This Year' }[p]}</button>`).join('')}
@@ -762,7 +779,7 @@ async function updateOrderStatus(id, status) {
   } catch (e) { showError(e.message); loadOrders(); }
 }
 async function deleteOrder(id) {
-  if (!confirm('Delete this bill? This cannot be undone.')) return;
+  if (!confirm('Are you sure you want to delete this?')) return;
   try { await api('/orders/' + id, { method: 'DELETE' }); loadOrders(); }
   catch (e) { showError(e.message); }
 }
@@ -870,6 +887,7 @@ function sendWhatsAppForData(inv) {
     `🧾 *Invoice No:* ${inv.number}`,
     `📅 *Date:* ${new Date(inv.date).toLocaleDateString('en-GB')}`,
     `🙋 *Customer:* ${inv.customer}`,
+    `📱 *Phone:* ${inv.phone || '-'}`,
     ``, `🛍️ *ITEMS PURCHASED*`,
     ...inv.items.map(it => `• ${it.name} — Qty: ${it.qty} x ₹${it.price} = ₹${(it.price * it.qty).toFixed(0)}`),
     ``, `💰 *Grand Total: ₹${inv.grandTotal.toFixed(2)}*`,
@@ -929,7 +947,7 @@ function renderAnalyticsPage() {
   const el = document.getElementById('page-analytics');
   el.innerHTML = `
     <div class="page-header">
-      <div class="page-title-block"><div class="bar"></div><div><h1>POS Analytics</h1><p>Real-time store &amp; channel insights</p></div></div>
+      <div class="page-title-block"><button class="page-hamburger-btn" onclick="openSidebar()" title="Menu">☰</button><div class="bar"></div><div><h1>POS Analytics</h1><p>Real-time store &amp; channel insights</p></div></div>
     </div>
     <div class="tabs-row">
       <div class="subtabs">
@@ -938,7 +956,7 @@ function renderAnalyticsPage() {
         <button data-tab="products" onclick="setAnalyticsTab('products')">Products</button>
         <button data-tab="coupons" onclick="setAnalyticsTab('coupons')">Coupons</button>
       </div>
-      <div class="period-and-date">
+      <div class="period-and-date" id="an-period-date-row">
         <div class="period-row" id="an-period-row">
           ${['all', 'today', 'week', 'month', 'year'].map(p => `<button data-period="${p}" class="${p === 'all' ? 'active' : ''}" onclick="setAnalyticsPeriod('${p}')">${{ all: 'All Time', today: 'Today', week: 'This Week', month: 'This Month', year: 'This Year' }[p]}</button>`).join('')}
         </div>
@@ -957,6 +975,8 @@ function renderAnalyticsPage() {
 function setAnalyticsTab(tab) {
   APP.analytics.tab = tab;
   document.querySelectorAll('.subtabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  const periodRow = document.getElementById('an-period-date-row');
+  if (periodRow) periodRow.classList.toggle('hidden', tab === 'today');
   loadAnalyticsTab();
 }
 function setAnalyticsPeriod(period) {
@@ -1042,7 +1062,7 @@ async function loadAnalyticsTab() {
             <div class="search-icon-wrap"><span class="search-icon">🔍</span><input class="search-box" id="today-search" placeholder="Search invoice/phone..." oninput="filterTodayTransactions()"></div>
             <div style="overflow-x:auto;">
               <table id="today-table">
-                <thead><tr><th>Invoice ID</th><th>Customer No</th><th>Source</th><th>Items</th><th>Grand Total</th></tr></thead>
+                <thead><tr><th>Invoice ID</th><th>Customer No</th><th>Source</th><th>Items</th><th>Grand Total</th><th>Actions</th></tr></thead>
                 <tbody id="today-tbody"></tbody>
               </table>
             </div>
@@ -1093,7 +1113,7 @@ async function loadAnalyticsTab() {
             <div class="search-icon-wrap"><span class="search-icon">🔍</span><input class="search-box" id="promo-search" placeholder="Search invoice/mobile/amount..." oninput="filterPromoTable()"></div>
             <div style="overflow-x:auto;">
               <table>
-                <thead><tr><th>Order ID</th><th>Customer Mobile</th><th>Order Total</th><th>Discount Applied</th></tr></thead>
+                <thead><tr><th>Order ID</th><th>Customer Mobile</th><th>Order Total</th><th>Discount Applied</th><th>Actions</th></tr></thead>
                 <tbody id="promo-tbody"></tbody>
               </table>
             </div>
@@ -1110,8 +1130,23 @@ async function loadAnalyticsTab() {
 
 function renderTodayTransactions(list) {
   document.getElementById('today-tbody').innerHTML = list.length ? list.map(t => `
-    <tr><td style="font-weight:700;">${escapeHtml(t.number)}</td><td>${escapeHtml(t.phone)}</td><td><span class="tag ${t.source}">${escapeHtml(t.source)}</span></td><td>${t.itemsCount} pcs</td><td style="font-weight:700;">${money(t.grandTotal)}</td></tr>
-  `).join('') : `<tr><td colspan="5"><div class="empty-state">No transactions yet today</div></td></tr>`;
+    <tr><td style="font-weight:700;">${escapeHtml(t.number)}</td><td>${escapeHtml(t.phone)}</td><td><span class="tag ${t.source}">${escapeHtml(t.source)}</span></td><td>${t.itemsCount} pcs</td><td style="font-weight:700;">${money(t.grandTotal)}</td>
+    <td>
+      <div class="order-actions">
+        <button class="btn green" title="Send via WhatsApp" onclick="sendWhatsAppForOrder('${t.id}')">💬</button>
+        <button class="btn dark" title="Download invoice" onclick="downloadInvoiceForOrder('${t.id}')">⬇</button>
+        <button class="btn danger" title="Delete" onclick="deleteTodayTransaction('${t.id}')">🗑</button>
+      </div>
+    </td></tr>
+  `).join('') : `<tr><td colspan="6"><div class="empty-state">No transactions yet today</div></td></tr>`;
+}
+async function deleteTodayTransaction(id) {
+  if (!confirm('Are you sure you want to delete this?')) return;
+  try {
+    await api('/orders/' + id, { method: 'DELETE' });
+    showToast('Transaction deleted');
+    loadAnalyticsTab();
+  } catch (e) { showError(e.message); }
 }
 function filterTodayTransactions() {
   const q = document.getElementById('today-search').value.toLowerCase();
@@ -1137,8 +1172,23 @@ function filterProductLeaderboard() {
 
 function renderPromoTable(list) {
   document.getElementById('promo-tbody').innerHTML = list.length ? list.map(t => `
-    <tr><td style="font-weight:700;">${escapeHtml(t.number)}</td><td>${escapeHtml(t.phone)}</td><td>${money(t.orderTotal)}</td><td style="color:var(--red); font-weight:700;">-${money(t.discount)}</td></tr>
-  `).join('') : `<tr><td colspan="4"><div class="empty-state">No discounted orders yet</div></td></tr>`;
+    <tr><td style="font-weight:700;">${escapeHtml(t.number)}</td><td>${escapeHtml(t.phone)}</td><td>${money(t.orderTotal)}</td><td style="color:var(--red); font-weight:700;">-${money(t.discount)}</td>
+    <td>
+      <div class="order-actions">
+        <button class="btn green" title="Send via WhatsApp" onclick="sendWhatsAppForOrder('${t.id}')">💬</button>
+        <button class="btn dark" title="Download invoice" onclick="downloadInvoiceForOrder('${t.id}')">⬇</button>
+        <button class="btn danger" title="Delete" onclick="deletePromoTransaction('${t.id}')">🗑</button>
+      </div>
+    </td></tr>
+  `).join('') : `<tr><td colspan="5"><div class="empty-state">No discounted orders yet</div></td></tr>`;
+}
+async function deletePromoTransaction(id) {
+  if (!confirm('Are you sure you want to delete this?')) return;
+  try {
+    await api('/orders/' + id, { method: 'DELETE' });
+    showToast('Transaction deleted');
+    loadAnalyticsTab();
+  } catch (e) { showError(e.message); }
 }
 function filterPromoTable() {
   const q = document.getElementById('promo-search').value.toLowerCase();

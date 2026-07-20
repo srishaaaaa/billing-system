@@ -117,6 +117,11 @@ img{max-width:100%;}
 /* ---------------- SHARED ---------------- */
 .page-header{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:12px;}
 .page-title-block{display:flex; align-items:center; gap:12px;}
+.page-hamburger-btn{
+  background:var(--black); color:#fff; border:none; width:34px; height:34px; border-radius:9px;
+  font-size:16px; display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+.page-hamburger-btn:hover{filter:brightness(1.15);}
 .page-title-block .bar{width:5px; height:30px; background:var(--red); border-radius:3px; flex-shrink:0;}
 .page-title-block h1{margin:0; font-size:20px;}
 .page-title-block p{margin:2px 0 0; color:var(--muted); font-size:12.5px;}
@@ -180,7 +185,13 @@ tbody td{padding:10px 10px 10px 0; border-bottom:1px solid #f1efe8; font-size:13
 .src-tag{font-size:10.5px; font-weight:800; color:var(--muted); background:#f2f0e9; padding:4px 10px; border-radius:999px;}
 .src-tag.on{color:var(--green); background:var(--green-soft);}
 .mini-info{display:flex; justify-content:space-between; font-size:12.5px; padding:6px 0; color:#4c4738;}
-.mini-info b{color:var(--ink);}
+.mini-info b{color:var(--ink); overflow-wrap:anywhere; text-align:right; margin-left:10px;}
+.invoice-lines{margin:8px 0 4px; border-top:1px dashed var(--line); border-bottom:1px dashed var(--line);}
+.invoice-lines:empty{border:none; margin:0;}
+.invoice-line-row{display:flex; justify-content:space-between; align-items:flex-start; gap:10px; font-size:12.5px; padding:6px 0; color:#4c4738;}
+.invoice-line-row .inv-line-name{overflow-wrap:anywhere;}
+.invoice-line-row .inv-line-qty{color:var(--muted); font-size:11px;}
+.invoice-line-row .inv-line-amt{font-weight:700; color:var(--ink); flex-shrink:0;}
 .sum-line{display:flex; justify-content:space-between; align-items:center; font-size:13px; padding:7px 0; color:#4c4738; flex-wrap:wrap; gap:8px;}
 .sum-line.total{font-size:18px; font-weight:800; color:var(--red-dark); border-top:1.5px solid var(--line); margin-top:6px; padding-top:12px;}
 .sum-line input[type=number]{width:86px; padding:6px 8px; border:1px solid var(--line); border-radius:6px; text-align:right;}

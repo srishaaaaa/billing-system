@@ -122,7 +122,7 @@ router.get('/today', asyncHandler(async (req, res) => {
   const transactions = orders
     .sort((a, b) => new Date(b.date) - new Date(a.date))
     .map(o => ({
-      number: o.number, customer: o.customer, phone: o.phone, source: o.source,
+      id: o.id, number: o.number, customer: o.customer, phone: o.phone, source: o.source,
       itemsCount: o.items.reduce((a, i) => a + i.qty, 0), grandTotal: o.grandTotal
     }));
 
@@ -180,7 +180,7 @@ router.get('/discounts', asyncHandler(async (req, res) => {
     avgDiscountPerOrder: discounted.length ? totalDiscountsGiven / discounted.length : 0,
     transactions: discounted
       .sort((a, b) => new Date(b.date) - new Date(a.date))
-      .map(o => ({ number: o.number, phone: o.phone, orderTotal: o.grandTotal, discount: o.manualDiscount }))
+      .map(o => ({ id: o.id, number: o.number, phone: o.phone, orderTotal: o.grandTotal, discount: o.manualDiscount }))
   });
 }));
 
