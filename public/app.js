@@ -928,9 +928,9 @@ async function downloadInvoiceForOrder(id) {
     downloadInvoiceForData(order);
   } catch (e) { showError(e.message); }
 }
-function downloadInvoiceForData(inv) {
+async function downloadInvoiceForData(inv) {
   const css = `
-    body{font-family:Segoe UI,Arial,sans-serif; color:#1a1a1a; max-width:620px; margin:30px auto; padding:0 20px;}
+    body{font-family:Segoe UI,Arial,sans-serif; color:#1a1a1a;}
     .inv-center{text-align:center; margin-bottom:22px;}
     .inv-logo{width:52px;height:52px;border-radius:14px; margin:0 auto 10px; background:#121212; color:#d6203c; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:10px;}
     .inv-center h2{color:#a8172f; margin:0 0 2px; font-size:19px;}
@@ -948,14 +948,27 @@ function downloadInvoiceForData(inv) {
     .inv-totals .grand{font-weight:800; font-size:16px; border-top:1.5px solid #e7e7e5; padding-top:10px; margin-top:6px; color:#a8172f;}
     .payment-strip{margin-top:16px; background:#fce9ec; border-radius:10px; padding:11px 14px; font-size:12.5px; display:flex; justify-content:space-between;}
   `;
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${escapeHtml(inv.number)}</title><style>${css}</style></head><body>${renderInvoiceHTML(inv)}</body></html>`;
-  const blob = new Blob([html], { type: 'text/html' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = inv.number + '.html';
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  showToast('Invoice downloaded — open it and print to save as PDF');
+
+  const wrapper = document.createElement('div');
+  wrapper.style.cssText = 'position:fixed; left:-9999px; top:0; width:620px; background:#fff; padding:0 20px 20px;';
+  wrapper.innerHTML = `<style>${css}</style>${renderInvoiceHTML(inv)}`;
+  document.body.appendChild(wrapper);
+
+  try {
+    const canvas = await html2canvas(wrapper, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
+    const imgData = canvas.toDataURL('image/png');
+    const { jsPDF } = window.jspdf;
+    const pdfWidth = 148;
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+    const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: [pdfWidth, pdfHeight] });
+    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+    pdf.save(inv.number + '.pdf');
+    showToast('Invoice downloaded');
+  } catch (e) {
+    showError('Could not generate the invoice PDF. Please try again.');
+  } finally {
+    document.body.removeChild(wrapper);
+  }
 }
 
 /* ============================================================
